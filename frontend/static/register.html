@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="icon" type="image/png" href="favicon-32x32.png">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration - Face ID ©</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 15px;
+            /* Rounded edges */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        label {
+            display: block;
+            background-color: #007bff;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            border-radius: 20px;
+            /* Adjust the value to increase or decrease the roundness */
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        label:hover {
+            background-color: #0056b3;
+        }
+
+        #feedback {
+            margin-top: 10px;
+            color: #888;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .redirect-button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            /* Adjust the value to increase or decrease the roundness */
+            text-decoration: none;
+            margin-top: 20px;
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+
+        .redirect-button:hover {
+            background-color: #3EB8E0;
+            /* Darker shade on hover */
+        }
+
+        /* Styling for the "Authenticate" button */
+        #authenticate-button {
+            background-color: #dc3545;
+            /* Red color */
+        }
+
+        #authenticate-button:hover {
+            background-color: #c82333;
+            /* Darker red on hover */
+        }
+
+        .container_vid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        #myVideo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            /* Rounded edges */
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container_vid">
+        <video autoplay muted loop id="myVideo">
+            <source src="/static/matrix.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="container">
+        <h1>Register</h1>
+        <input type="text" id="first-name" placeholder="First Name">
+        <input type="text" id="last-name" placeholder="Last Name">
+        <input type="file" id="file-input" accept=".jpg, .jpeg, .png">
+        <label for="file-input">Choose Image</label>
+        <div id="feedback"></div>
+        <img id="image-preview" alt="Image Preview">
+        <button id="register-button" class="redirect-button">Register</button>
+
+        <a href="/static/index.html" id="authenticate-button" class="redirect-button">Authenticate</a>
+    </div>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:8001/register';
+
+        function handleImageUpload(imageFile) {
+            document.getElementById('image-preview').src = URL.createObjectURL(imageFile);
+            document.getElementById('image-preview').style.display = 'block';
+        }
+
+        function handleUpload(event) {
+            const file = event.target.files[0];
+            handleImageUpload(file);
+        }
+
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', handleUpload);
+
+        const registerButton = document.getElementById('register-button');
+        registerButton.addEventListener('click', async function () {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = 'Registering User...';
+            feedback.style.color = 'black';
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('first_name', document.getElementById('first-name').value);
+            formData.append('last_name', document.getElementById('last-name').value);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    feedback.textContent = 'Registration successful';
+                    feedback.style.color = 'green';
+
+                    // Play audio feedback based on the response
+                    const audio = new Audio(data.audio); // Assuming backend returns the audio file path as `data.audio`
+                    audio.play();
+
+                    // Optionally clear the form
+                    document.getElementById('first-name').value = '';
+                    document.getElementById('last-name').value = '';
+                    document.getElementById('file-input').value = '';
+                    document.getElementById('image-preview').style.display = 'none';
+                } else {
+                    feedback.textContent = data.message;
+                    feedback.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                feedback.textContent = 'An error occurred during registration';
+                feedback.style.color = 'red';
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>
